@@ -52,6 +52,7 @@ DynamicBatchScheduler::DynamicBatchScheduler(
       preferred_batch_sizes_(preferred_batch_sizes),
       pending_batch_delay_ns_(max_queue_delay_microseconds * 1000),
       pending_batch_size_(0), pending_batch_queue_cnt_(0),
+      queued_batch_size_(0), next_preferred_batch_size_(0),
       enforce_equal_shape_batch_(enforce_equal_shape_batch)
 {
   max_preferred_batch_size_ = 0;
