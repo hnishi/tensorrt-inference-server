@@ -422,6 +422,43 @@ PlanBackend::CreateExecutionContext(
 }
 
 Status
+PlanBackend::IsShapeTensorIO(
+    const std::string& io_name, bool* is_shape_tensor_io)
+{
+  // The shape tensor property is invariant of the optimization profile, hence
+  // selecting the first context
+  if (!contexts_.empty()) {
+    return static_cast<Context*>(contexts_[0].get())
+        ->IsShapeTensorIO(io_name, is_shape_tensor_io);
+  } else {
+    return Status(
+        RequestStatusCode::INTERNAL,
+        "there are no active contexts in the backend");
+  }
+}
+
+Status
+PlanBackend::Context::IsShapeTensorIO(
+    const std::string& io_name, bool* is_shape_tensor_io)
+{
+  // The shape tensor will remain shape tensors across all the optimization
+  // profiles, hence using the first context
+  if (engine_ == nullptr) {
+    return Status(RequestStatusCode::INTERNAL, "engine is not loaded.");
+  }
+  int io_index = engine_->getBindingIndex(io_name.c_str());
+  if (io_index == -1) {
+    return Status(
+        RequestStatusCode::INTERNAL,
+        "binding '" + io_name + "' not found in the model.");
+  } else {
+    *is_shape_tensor_io = engine_->isShapeBinding(io_index);
+  }
+
+  return Status::Success;
+}
+
+Status
 PlanBackend::Context::ValidateInputs(
     const ::google::protobuf::RepeatedPtrField<ModelInput>& ios)
 {

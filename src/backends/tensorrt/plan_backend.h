@@ -49,6 +49,11 @@ class PlanBackend : public InferenceBackend {
       const std::unordered_map<std::string, std::vector<char>>& models,
       const ::google::protobuf::RepeatedPtrField<std::string>& profile_names);
 
+  // Checks whether the 'io_name' is a shape input/output to the model
+  // io_name is the name of the tensor
+  // is_shape_tensor_io returns whether the io_name is a shape tensor
+  Status IsShapeTensorIO(const std::string& io_name, bool* is_shape_tensor_io);
+
  private:
   DISALLOW_COPY_AND_ASSIGN(PlanBackend);
   friend std::ostream& operator<<(std::ostream&, const PlanBackend&);
@@ -64,6 +69,10 @@ class PlanBackend : public InferenceBackend {
     DISALLOW_COPY_AND_ASSIGN(Context);
 
     struct TensorRTContext;
+
+    // Checks whether the 'io_name' is a shape input/output to the model
+    Status IsShapeTensorIO(
+        const std::string& io_name, bool* is_shape_tensor_io);
 
     Status ValidateInputs(
         const ::google::protobuf::RepeatedPtrField<ModelInput>& ios);
