@@ -88,6 +88,9 @@ class InferenceBackend {
       std::function<void(const Status&)> OnCompleteHandleInfer);
 
  protected:
+  // Return true if a named tensor is a shape tensor.
+  virtual bool IsShapeTensor(const std::string& tensor_name) { return false; }
+
   // Run model on the context associated with 'runner_idx' to
   // execute for one or more requests.
   virtual void Run(

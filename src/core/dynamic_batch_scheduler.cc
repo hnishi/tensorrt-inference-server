@@ -43,7 +43,7 @@ DynamicBatchScheduler::DynamicBatchScheduler(
     const uint32_t runner_id_start, const uint32_t runner_cnt,
     StandardInitFunc OnInit, StandardWarmupFunc OnWarmup,
     StandardRunFunc OnSchedule, const bool dynamic_batching_enabled,
-    const bool enforce_equal_shape_batch,
+    const std::set<std::string>& enforce_equal_shape_tensors,
     const std::set<int32_t>& preferred_batch_sizes,
     const uint64_t max_queue_delay_microseconds)
     : OnInit_(OnInit), OnWarmup_(OnWarmup), OnSchedule_(OnSchedule),
@@ -52,7 +52,7 @@ DynamicBatchScheduler::DynamicBatchScheduler(
       preferred_batch_sizes_(preferred_batch_sizes),
       pending_batch_delay_ns_(max_queue_delay_microseconds * 1000),
       pending_batch_size_(0), pending_batch_queue_cnt_(0),
-      enforce_equal_shape_batch_(enforce_equal_shape_batch)
+      enforce_equal_shape_tensors_(enforce_equal_shape_tensors)
 {
   max_preferred_batch_size_ = 0;
   for (const auto size : preferred_batch_sizes_) {
@@ -66,14 +66,14 @@ DynamicBatchScheduler::Create(
     const uint32_t runner_id_start, const uint32_t runner_cnt, const int nice,
     StandardInitFunc OnInit, StandardWarmupFunc OnWarmup,
     StandardRunFunc OnSchedule, const bool dynamic_batching_enabled,
-    const bool enforce_equal_shape_batch,
+    const std::set<std::string>& enforce_equal_shape_tensors,
     const std::set<int32_t>& preferred_batch_sizes,
     const uint64_t max_queue_delay_microseconds,
     std::unique_ptr<Scheduler>* scheduler)
 {
   DynamicBatchScheduler* dyna_sched = new DynamicBatchScheduler(
       runner_id_start, runner_cnt, OnInit, OnWarmup, OnSchedule,
-      dynamic_batching_enabled, enforce_equal_shape_batch,
+      dynamic_batching_enabled, enforce_equal_shape_tensors,
       preferred_batch_sizes, max_queue_delay_microseconds);
   std::unique_ptr<DynamicBatchScheduler> sched(dyna_sched);
 
@@ -367,7 +367,7 @@ DynamicBatchScheduler::CompareWithPendingShape(
     const auto itr = pending_batch_shapes_.find(input.name());
 
     // It should never happen that we don't find the shape for an
-    // input, but if it does just return to be conservative.
+    // input, but if it does just return false to be conservative.
     if (itr == pending_batch_shapes_.end()) {
       LOG_ERROR << "expected to find shape for input '" << input.name() << "'";
       return false;
@@ -405,7 +405,7 @@ DynamicBatchScheduler::GetDynamicBatch()
     // new batch.
     if (search_batch_cnt == 0) {
       // Get the shape of the new batch that is being started...
-      if (enforce_equal_shape_batch_) {
+      if (!enforce_equal_shape_tensors_.empty()) {
         InitPendingShape(queue_[idx].request_provider_->RequestHeader());
       }
     } else {
@@ -418,7 +418,7 @@ DynamicBatchScheduler::GetDynamicBatch()
 
       // There is a pending batch and it has a different shape then
       // this request, so send the pending batch as it is.
-      if (enforce_equal_shape_batch_ &&
+      if (!enforce_equal_shape_tensors_.empty() &&
           !CompareWithPendingShape(
               queue_[idx].request_provider_->RequestHeader())) {
         send_now = true;

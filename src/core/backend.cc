@@ -174,22 +174,22 @@ InferenceBackend::SetConfiguredScheduler(
       preferred_batch_sizes.insert(size);
     }
 
-    // Need to enforce equal shape batches (i.e. non-ragged batches) if
-    // the model allows one or more variable-size input tensors. This is
-    // not needed if all input shapes are non-variable and so we don't
-    // enable it for efficiency reasons.
-    bool enforce_equal_shape_batch = false;
+    // Need to enforce equal shape batches (i.e. non-ragged batches)
+    // if the model allows one or more variable-size input tensors or
+    // has shape-tensor inputs. This is not needed if all input shapes
+    // are non-variable and if there are no shape tensors... so we
+    // don't enable it in that case for efficiency reasons.
+    std::set<std::string> enforce_equal_shape_tensors;
     for (const auto input : config_.input()) {
-      if (GetElementCount(input) == -1) {
-        enforce_equal_shape_batch = true;
-        break;
+      if ((GetElementCount(input) == -1) || IsShapeTensor(input.name())) {
+        enforce_equal_shape_tensors.insert(input.name());
       }
     }
 
     RETURN_IF_ERROR(DynamicBatchScheduler::Create(
         0 /* runner_id_start */, runner_cnt, GetCpuNiceLevel(config_), OnInit,
         OnWarmup, OnRun, true /* dynamic_batching_enabled */,
-        enforce_equal_shape_batch, preferred_batch_sizes,
+        enforce_equal_shape_tensors, preferred_batch_sizes,
         config_.dynamic_batching().max_queue_delay_microseconds(), &scheduler));
   } else {
     // Use dynamic batch scheduler (with batching disabled) as the
@@ -197,7 +197,7 @@ InferenceBackend::SetConfiguredScheduler(
     RETURN_IF_ERROR(DynamicBatchScheduler::Create(
         0 /* runner_id_start */, runner_cnt, GetCpuNiceLevel(config_), OnInit,
         OnWarmup, OnRun, false /* dynamic_batching_enabled */,
-        false /* enforce_equal_shape_batch */,
+        std::set<std::string>() /* enforce_equal_shape_tensors */,
         std::set<int32_t>() /* preferred_batch_sizes */,
         0 /* max_queue_delay_microseconds */, &scheduler));
   }

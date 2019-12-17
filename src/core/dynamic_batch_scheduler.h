@@ -48,7 +48,7 @@ class DynamicBatchScheduler : public Scheduler {
       const uint32_t runner_id_start, const uint32_t runner_cnt, const int nice,
       StandardInitFunc OnInit, StandardWarmupFunc OnWarmup,
       StandardRunFunc OnSchedule, const bool dynamic_batching_enabled,
-      const bool enforce_equal_shape_batch,
+      const std::set<std::string>& enforce_equal_shape_tensors,
       const std::set<int32_t>& preferred_batch_sizes,
       const uint64_t max_queue_delay_microseconds,
       std::unique_ptr<Scheduler>* scheduler);
@@ -67,7 +67,7 @@ class DynamicBatchScheduler : public Scheduler {
       const uint32_t runner_id_start, const uint32_t runner_cnt,
       StandardInitFunc OnInit, StandardWarmupFunc OnWarmup,
       StandardRunFunc OnSchedule, const bool dynamic_batching_enabled,
-      const bool enforce_equal_shape_batch,
+      const std::set<std::string>& enforce_equal_shape_tensors,
       const std::set<int32_t>& preferred_batch_sizes,
       const uint64_t max_queue_delay_microseconds);
   void SchedulerThread(
@@ -114,7 +114,7 @@ class DynamicBatchScheduler : public Scheduler {
   size_t pending_batch_size_;
   size_t pending_batch_queue_cnt_;
 
-  const bool enforce_equal_shape_batch_;
+  const std::set<std::string> enforce_equal_shape_tensors_;
   std::unordered_map<std::string, DimsList> pending_batch_shapes_;
 };
 
