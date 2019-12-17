@@ -70,16 +70,25 @@ class PlanBackend : public InferenceBackend {
     Status ValidateOutputs(
         const ::google::protobuf::RepeatedPtrField<ModelOutput>& ios);
 
-    Status InitializeInputBinding(
+    Status InitializeExecuteInputBinding(
         const std::string& input_name, const DataType input_datatype,
         const DimsList& input_dims, const bool support_batching,
         const bool is_control = false);
+    Status InitializeShapeInputBinding(
+        const std::string& input_name, const DataType input_datatype,
+        const DimsList& input_dims, const bool support_batching);
     Status InitializeSequenceControlInputBindings(
         const ModelConfig& config, const bool support_batching);
-    Status InitializeConfigInputBindings(
+    Status InitializeConfigExecuteInputBindings(
         const ::google::protobuf::RepeatedPtrField<ModelInput>& ios,
         const bool support_batching);
-    Status InitializeConfigOutputBindings(
+    Status InitializeConfigShapeInputBindings(
+        const ::google::protobuf::RepeatedPtrField<ModelInput>& ios,
+        const bool support_batching);
+    Status InitializeConfigExecuteOutputBindings(
+        const ::google::protobuf::RepeatedPtrField<ModelOutput>& ios,
+        const bool support_batching);
+    Status InitializeConfigShapeOutputBindings(
         const ::google::protobuf::RepeatedPtrField<ModelOutput>& ios,
         const bool support_batching);
     bool BuildCudaGraph(TensorRTContext* trt_context, const int batch_size);
@@ -99,7 +108,8 @@ class PlanBackend : public InferenceBackend {
       TensorRTContext(const std::string& profile_name, int binding_cnts)
           : profile_name_(profile_name), context_(nullptr),
             min_dims_(binding_cnts), max_dims_(binding_cnts),
-            opt_dims_(binding_cnts)
+            opt_dims_(binding_cnts), min_shapes_(binding_cnts),
+            max_shapes_(binding_cnts), opt_shapes_(binding_cnts)
       {
       }
       std::string profile_name_;
@@ -118,6 +128,15 @@ class PlanBackend : public InferenceBackend {
 
       // Optimized Dimensions per bindings
       std::vector<nvinfer1::Dims> opt_dims_;
+
+      // Min shape values per bindings
+      std::vector<const int32_t*> min_shapes_;
+
+      // Max shape values per bindings
+      std::vector<const int32_t*> max_shapes_;
+
+      // Optimized shape values per bindings
+      std::vector<const int32_t*> opt_shapes_;
     };
 
     std::map<int, TensorRTContext>::iterator GetMostOptimizedProfile(

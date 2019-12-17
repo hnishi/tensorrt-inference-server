@@ -74,6 +74,11 @@ Status CompareDimsSupported(
     const nvinfer1::Dims& model_dims, const DimsList& dims,
     const bool supports_batching, const bool is_dynamic);
 
+Status CompareShapeDimsSupported(
+    const std::string& model_name, const std::string& tensor_name,
+    const nvinfer1::Dims& model_dims, const DimsList& dims,
+    const bool supports_batching);
+
 Status ValidateControlDimsDynamic(
     const nvinfer1::Dims& dims, const bool support_batching);
 
