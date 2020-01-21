@@ -374,15 +374,20 @@ RUN id -u $TENSORRT_SERVER_USER > /dev/null 2>&1 || \
 
 # libgoogle-glog0v5 is needed by caffe2 libraries.
 # libcurl is needed for GCS
+# libopencv-dev and libopencv-core-dev are needed for image_preprocess (Example Custom Backend)
 RUN if [ $(cat /etc/os-release | grep 'VERSION_ID="16.04"' | wc -l) -ne 0 ]; then \
         apt-get update && \
         apt-get install -y --no-install-recommends \
+                libopencv-dev \
+                libopencv-core-dev \
                 libcurl3-dev \
                 libgoogle-glog0v5 \
                 libre2-1v5; \
     elif [ $(cat /etc/os-release | grep 'VERSION_ID="18.04"' | wc -l) -ne 0 ]; then \
         apt-get update && \
         apt-get install -y --no-install-recommends \
+                libopencv-dev \
+                libopencv-core-dev \
                 libcurl4-openssl-dev \
                 libgoogle-glog0v5 \
                 libre2-4; \
